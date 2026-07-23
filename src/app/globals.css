@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force light. The prototype had a bug where phone dark-mode inverted the
+   page and hid text (spec §11). color-scheme + these guards prevent it. */
+:root {
+  color-scheme: light only;
+}
+
+html,
+body {
+  background-color: #f0f6fa;
+  color: #1a3347;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .mono {
+    @apply font-mono tabular-nums;
+  }
+  .card {
+    @apply rounded-lg border border-border bg-panel;
+  }
+}
