@@ -32,8 +32,13 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-bg px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-2 text-2xl font-bold tracking-tight text-navy">Sha7ntec</div>
-          <p className="text-sm text-dim">Logistics Financial Control</p>
+          <div className="mb-2 flex items-center justify-center gap-2.5">
+            <div className="h-3 w-3 rounded-[4px] bg-brand-gradient" />
+            <div className="font-mono text-xl font-bold tracking-wide text-navy">SHA7NTEC</div>
+          </div>
+          <p className="text-xs font-semibold tracking-wide text-faint">
+            FINANCIAL CONTROL MIDDLEWARE
+          </p>
         </div>
         <form onSubmit={onSubmit} className="card space-y-4 p-6">
           <Field label="Email">

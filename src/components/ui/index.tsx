@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { AnomalySeverity } from '@/lib/types';
+import type { AnomalySeverity, UserRole } from '@/lib/types';
 
 function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
@@ -13,15 +13,15 @@ export function Button({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
   const styles: Record<ButtonVariant, string> = {
-    primary: 'bg-blue text-white hover:bg-blue/90 disabled:opacity-50',
+    primary: 'bg-blue text-white shadow-[0_2px_8px_rgba(46,143,224,0.28)] hover:bg-[#2680cd] disabled:opacity-50 disabled:shadow-none',
     secondary: 'bg-panelAlt text-ink border border-border hover:bg-border/40',
-    danger: 'bg-red text-white hover:bg-red/90 disabled:opacity-50',
+    danger: 'bg-red text-white shadow-[0_2px_8px_rgba(224,96,74,0.28)] hover:bg-[#d1543f] disabled:opacity-50',
     ghost: 'text-dim hover:text-ink hover:bg-panelAlt',
   };
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed',
         styles[variant],
         className,
       )}
@@ -32,7 +32,9 @@ export function Button({
 
 // ---------------- Card / Panel ----------------
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cx('rounded-lg border border-border bg-panel', className)} {...props} />;
+  return (
+    <div className={cx('rounded-xl border border-border bg-panel shadow-card', className)} {...props} />
+  );
 }
 
 export function Panel({
@@ -49,49 +51,68 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <Card className={cx('overflow-hidden', className)}>
+    <Card className={cx('p-5', className)}>
       {(title || actions) && (
-        <div className="flex items-start justify-between gap-4 border-b border-border bg-panelAlt px-5 py-3">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            {title && <h3 className="text-sm font-semibold text-ink">{title}</h3>}
-            {subtitle && <p className="mt-0.5 text-xs text-dim">{subtitle}</p>}
+            {title && <h3 className="text-sm font-bold text-navy">{title}</h3>}
+            {subtitle && <p className="mt-0.5 text-xs text-faint">{subtitle}</p>}
           </div>
           {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      {children}
     </Card>
   );
 }
 
-// ---------------- Badge ----------------
-type BadgeTone = 'neutral' | 'blue' | 'green' | 'amber' | 'violet' | 'red' | 'navy';
+// ---------------- Badge (dot + label) ----------------
+type BadgeTone = 'neutral' | 'blue' | 'green' | 'amber' | 'violet' | 'red' | 'navy' | 'gold';
+const BADGE_DOT: Record<BadgeTone, string> = {
+  neutral: '#9AB0BF',
+  blue: '#2E8FE0',
+  green: '#1FAE6E',
+  amber: '#E0A23A',
+  violet: '#7B6FD0',
+  red: '#E0604A',
+  navy: '#13314A',
+  gold: '#D9A62E',
+};
 export function Badge({
   tone = 'neutral',
+  dot = true,
   children,
   className,
 }: {
   tone?: BadgeTone;
+  dot?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
   const tones: Record<BadgeTone, string> = {
     neutral: 'bg-panelAlt text-dim border-border',
-    blue: 'bg-blue/10 text-blue border-blue/20',
-    green: 'bg-green/10 text-green border-green/20',
-    amber: 'bg-amber/10 text-amber border-amber/20',
-    violet: 'bg-violet/10 text-violet border-violet/20',
-    red: 'bg-red/10 text-red border-red/20',
-    navy: 'bg-navy/10 text-navy border-navy/20',
+    blue: 'bg-blue/10 text-blue border-blue/25',
+    green: 'bg-green/10 text-green border-green/25',
+    amber: 'bg-amber/10 text-amber border-amber/25',
+    violet: 'bg-violet/10 text-violet border-violet/25',
+    red: 'bg-red/10 text-red border-red/25',
+    navy: 'bg-navy/10 text-navy border-navy/25',
+    gold: 'bg-gold/10 text-gold border-gold/25',
   };
   return (
     <span
       className={cx(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-xs font-semibold',
         tones[tone],
         className,
       )}
     >
+      {dot && (
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          style={{ backgroundColor: BADGE_DOT[tone] }}
+        />
+      )}
       {children}
     </span>
   );
@@ -101,6 +122,55 @@ export function AnomalyBadge({ severity }: { severity: AnomalySeverity | null })
   if (!severity || severity === 'normal') return <Badge tone="green">Normal</Badge>;
   if (severity === 'review') return <Badge tone="amber">Review</Badge>;
   return <Badge tone="red">Flagged</Badge>;
+}
+
+// ---------------- Role tag ----------------
+const ROLE_TONE: Record<UserRole, BadgeTone> = {
+  vendor: 'amber',
+  procurement: 'blue',
+  forwarder: 'violet',
+  warehouse: 'green',
+  finance: 'red',
+  admin: 'navy',
+};
+export function RoleTag({ role }: { role: UserRole }) {
+  return (
+    <Badge tone={ROLE_TONE[role]} className="uppercase tracking-wide">
+      {role}
+    </Badge>
+  );
+}
+
+// ---------------- KPI tile ----------------
+export function Kpi({
+  label,
+  value,
+  sub,
+  accent = 'blue',
+  icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  accent?: 'blue' | 'green' | 'navy' | 'violet' | 'amber' | 'red';
+  icon?: React.ReactNode;
+}) {
+  const bar: Record<string, string> = {
+    blue: 'border-t-blue',
+    green: 'border-t-green',
+    navy: 'border-t-navy',
+    violet: 'border-t-violet',
+    amber: 'border-t-amber',
+    red: 'border-t-red',
+  };
+  return (
+    <Card className={cx('border-t-[3px] p-4', bar[accent])}>
+      {icon && <div className="mb-1.5 text-lg">{icon}</div>}
+      <div className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</div>
+      <div className="mt-1.5 text-2xl font-bold text-ink">{value}</div>
+      {sub && <div className="mt-1 text-xs text-dim">{sub}</div>}
+    </Card>
+  );
 }
 
 // ---------------- Field ----------------
@@ -115,7 +185,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-dim">{label}</span>
+      <span className="mb-1 block text-xs font-semibold text-dim">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-faint">{hint}</span>}
     </label>
@@ -173,7 +243,7 @@ export function Money({ amount, currency = 'USD' }: { amount: number | null; cur
 // Mocked things must be visibly labelled (spec §18.5).
 export function SimulatedTag({ children = 'Simulated' }: { children?: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-amber/30 bg-amber/10 px-2 py-0.5 text-[11px] font-medium text-amber">
+    <span className="inline-flex items-center gap-1 rounded border border-amber/30 bg-amber/10 px-2 py-0.5 text-[11px] font-semibold text-amber">
       ⚠ {children}
     </span>
   );

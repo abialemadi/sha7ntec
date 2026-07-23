@@ -1,20 +1,10 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Card, Panel, Badge, Money } from '@/components/ui';
+import { Panel, Badge, Money, Kpi } from '@/components/ui';
 import { poStatusLabel, formatDate } from '@/lib/format';
 import type { Award, PurchaseOrder, Tender } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
-
-function Kpi({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
-  return (
-    <Card className="p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-faint">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-ink">{value}</div>
-      {sub && <div className="mt-1 text-xs text-dim">{sub}</div>}
-    </Card>
-  );
-}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -44,14 +34,10 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Kpi label="Shipments" value={purchaseOrders.length} sub="Total purchase orders" />
-        <Kpi label="Open tenders" value={activeTenders} sub="Awaiting bids / close" />
-        <Kpi label="In transit" value={inTransit} />
-        <Kpi
-          label="Freight savings"
-          value={<Money amount={totalSavings} />}
-          sub="Awarded vs highest bid"
-        />
+        <Kpi label="Freight savings" accent="green" icon="💰" value={<Money amount={totalSavings} />} sub="Awarded vs highest bid" />
+        <Kpi label="Shipments" accent="navy" icon="📦" value={purchaseOrders.length} sub="Total purchase orders" />
+        <Kpi label="Open tenders" accent="blue" icon="🔒" value={activeTenders} sub="Awaiting bids / close" />
+        <Kpi label="In transit" accent="violet" icon="🚚" value={inTransit} sub="Awarded & shipping" />
       </div>
 
       <Panel title="Recent shipments" subtitle={`${purchaseOrders.length} total`}>

@@ -10,8 +10,8 @@
 
 html,
 body {
-  background-color: #f0f6fa;
-  color: #1a3347;
+  background-color: #f3f8fb;
+  color: #1a2b3d;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -20,6 +20,6 @@ body {
     @apply font-mono tabular-nums;
   }
   .card {
-    @apply rounded-lg border border-border bg-panel;
+    @apply rounded-xl border border-border bg-panel shadow-card;
   }
 }
