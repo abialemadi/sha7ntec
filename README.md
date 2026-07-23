@@ -55,7 +55,11 @@ npm run dev        # http://localhost:3000
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Anomaly-detection unit tests (Vitest) |
 | `npm run seed` | Seed the RGPC demo dataset |
+| `npm run verify:rls` | Prove the sealed-bid moat against a live seeded Supabase (DoD §16) |
 | `npm run check:keys` | Fail if a server-only secret is referenced from client code |
+
+CI (`.github/workflows/ci.yml`) runs typecheck, unit tests, the server-key leak
+check, and the build on every push and PR.
 
 ---
 
@@ -191,3 +195,15 @@ To verify the moat manually: sign in as `bids@gwclogistics.demo` and
 `bids@dsv.demo` on the same open tender — neither can see the other's bid, nor
 how many bids exist. Sign in as procurement — bid amounts are invisible until
 you close the tender.
+
+To verify it **automatically** (Definition of Done §16, items 1 & 2), after
+seeding run:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... npm run verify:rls
+```
+
+This signs in as two forwarders and procurement with the anon key (the browser's
+path, not the service role) and asserts each forwarder sees only their own bid
+and procurement reads zero bids while the tender is open. The seed leaves PO
+4000004597 as an open tender with five sealed bids for exactly this check.
