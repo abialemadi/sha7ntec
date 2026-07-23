@@ -42,37 +42,48 @@ export function StageStepper({ status }: { status: PoStatus }) {
   const done = status === 'paid';
 
   return (
-    <ol className="flex flex-wrap gap-2">
-      {STAGES.map((s) => {
-        const state = done || s.n < current ? 'done' : s.n === current ? 'active' : 'todo';
-        return (
-          <li
-            key={s.n}
-            className={
-              'flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium ' +
-              (state === 'done'
-                ? 'border-green/30 bg-green/10 text-green'
-                : state === 'active'
-                  ? 'border-blue/40 bg-blue/10 text-blue'
-                  : 'border-border bg-panelAlt text-faint')
-            }
-          >
-            <span
-              className={
-                'flex h-5 w-5 items-center justify-center rounded-full text-[10px] ' +
-                (state === 'done'
-                  ? 'bg-green text-white'
-                  : state === 'active'
-                    ? 'bg-blue text-white'
-                    : 'bg-border text-dim')
-              }
-            >
-              {state === 'done' ? '✓' : s.n}
-            </span>
-            {s.label}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="rounded-xl border border-border bg-panel p-3 shadow-card">
+      <ol className="flex items-center gap-1 overflow-x-auto pb-1">
+        {STAGES.map((s, idx) => {
+          const state = done || s.n < current ? 'done' : s.n === current ? 'active' : 'todo';
+          return (
+            <li key={s.n} className="flex shrink-0 items-center gap-1">
+              {idx > 0 && (
+                <span
+                  className={
+                    'h-0.5 w-4 rounded-full ' +
+                    (state === 'todo' ? 'bg-border' : 'bg-gradient-to-r from-blue to-green')
+                  }
+                />
+              )}
+              <span
+                className={
+                  'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ' +
+                  (state === 'done'
+                    ? 'border-green/30 bg-green/5 text-green'
+                    : state === 'active'
+                      ? 'border-blue/40 bg-blue/10 text-blue'
+                      : 'border-border bg-panelAlt text-faint')
+                }
+              >
+                <span
+                  className={
+                    'flex h-5 w-5 items-center justify-center rounded-full text-[10px] ' +
+                    (state === 'done'
+                      ? 'bg-green text-white'
+                      : state === 'active'
+                        ? 'bg-blue text-white'
+                        : 'bg-border text-dim')
+                  }
+                >
+                  {state === 'done' ? '✓' : s.n}
+                </span>
+                <span className="whitespace-nowrap">{s.label}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }

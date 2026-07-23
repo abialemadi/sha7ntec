@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionProfile } from '@/lib/auth';
 import { Panel, Badge, Money, SimulatedTag } from '@/components/ui';
-import { StageStepper } from '@/components/workflow/StageStepper';
+import { StageStepper, stageForStatus } from '@/components/workflow/StageStepper';
+import { ProcessTrail } from '@/components/workflow/ProcessTrail';
 import { DocumentList } from '@/components/workflow/DocumentList';
 import { DocumentUpload } from '@/components/workflow/DocumentUpload';
 import { TenderPanel } from '@/components/workflow/TenderPanel';
@@ -115,6 +116,13 @@ export default async function ShipmentDetailPage({
           <Badge tone="blue">{poStatusLabel(po.status)}</Badge>
         </div>
       </div>
+
+      <ProcessTrail
+        value={Number(po.total_value)}
+        currency={po.currency}
+        stage={stageForStatus(po.status)}
+        done={po.status === 'paid'}
+      />
 
       <StageStepper status={po.status} />
 
