@@ -221,6 +221,39 @@ export default async function ShipmentDetailPage({
         </Panel>
       )}
 
+      {/* Stage 4 — Award & Connect: vendor ↔ winning forwarder */}
+      {thisAward && (
+        <Panel
+          title="Stage 4 · Award & connect"
+          subtitle="Vendor and winning forwarder are linked to coordinate directly"
+          actions={<Badge tone="green">connected</Badge>}
+        >
+          <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr]">
+            <div className="rounded-lg border border-amber/30 bg-amber/5 p-3 text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-faint">Vendor</div>
+              <div className="mt-1 text-sm font-bold text-navy">{v?.name ?? '—'}</div>
+              <div className="text-xs text-faint">{v?.contact_email ?? po.origin_location}</div>
+            </div>
+            <div className="flex items-center justify-center text-lg text-faint">＋</div>
+            <div className="rounded-lg border border-violet/30 bg-violet/5 p-3 text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-faint">
+                Freight forwarder
+              </div>
+              <div className="mt-1 text-sm font-bold text-navy">
+                {forwarderNames[thisAward.forwarder_id]}
+              </div>
+              <div className="mono text-xs text-green">
+                <Money amount={Number(thisAward.awarded_amount)} />
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-sm text-dim">
+            Connection sent — both parties coordinate pickup directly.
+            <SimulatedTag>simulated email</SimulatedTag>
+          </div>
+        </Panel>
+      )}
+
       {/* Stage 5 — goods receipt */}
       {(isWarehouse || goodsReceipt) && ['awarded', 'in_transit', 'goods_received', 'payment_pending', 'paid'].includes(po.status) && (
         <Panel title="Stage 5 · Goods receipt & SAP service entry" subtitle="Warehouse">

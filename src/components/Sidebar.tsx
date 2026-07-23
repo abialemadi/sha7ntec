@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { href: '/shipments', label: 'Shipments', icon: '📋', roles: ['admin', 'procurement', 'finance', 'warehouse'] },
   { href: '/admin/users', label: 'Users', icon: '👤', roles: ['admin'] },
   { href: '/admin/forwarders', label: 'Forwarders', icon: '🚚', roles: ['admin', 'procurement'] },
+  { href: '/admin/notifications', label: 'Notifications', icon: '🔔', roles: ['admin'] },
   { href: '/admin/audit', label: 'Audit Log', icon: '🛡️', roles: ['admin'] },
 ];
 
