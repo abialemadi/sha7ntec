@@ -133,6 +133,46 @@ async function main() {
   ]);
   console.log('PO 4000004597');
 
+  // ---- LIVE OPEN TENDER on 4000004597 — showcases the sealed reveal ----
+  // Bids are crafted so that closing the tender trips the anomaly rules:
+  // Navio + BDP land within 1.5% of each other (collusion → flagged, cheapest
+  // skipped), Gulf Agency is a high outlier (review), DSV is the recommended
+  // lowest qualified bid.
+  await db.from('purchase_orders').update({ status: 'tender_open' }).eq('id', po1!.id);
+  const { data: openTender } = await db
+    .from('tenders')
+    .insert({ org_id: orgId, po_id: po1!.id, mode: 'sea', status: 'open', opened_at: new Date().toISOString() })
+    .select('id')
+    .single();
+  const demoInvites = [
+    'GWC Qatar',
+    'DSV Panalpina Marine Shipping WLL',
+    'Gulf Agency Company Qatar (W.L.L.)',
+    'Navio Shipping CO.',
+    'BDP International Logistics Qatar WLL',
+  ];
+  await db.from('tender_invitations').insert(
+    demoInvites.map((n) => ({ tender_id: openTender!.id, forwarder_id: fwdId(n) })),
+  );
+  const demoBids: Record<string, { amount: number; transit: number }> = {
+    'Navio Shipping CO.': { amount: 8900, transit: 24 },
+    'BDP International Logistics Qatar WLL': { amount: 8980, transit: 26 },
+    'DSV Panalpina Marine Shipping WLL': { amount: 9150, transit: 23 },
+    'GWC Qatar': { amount: 9400, transit: 25 },
+    'Gulf Agency Company Qatar (W.L.L.)': { amount: 11800, transit: 22 },
+  };
+  await db.from('bids').insert(
+    Object.entries(demoBids).map(([n, b]) => ({
+      org_id: orgId,
+      tender_id: openTender!.id,
+      forwarder_id: fwdId(n),
+      amount: b.amount,
+      transit_days: b.transit,
+      status: 'submitted',
+    })),
+  );
+  console.log('open demo tender on 4000004597 (5 sealed bids)');
+
   // ---- PO 4000004608 (real) ----
   const { data: po2 } = await db
     .from('purchase_orders')
