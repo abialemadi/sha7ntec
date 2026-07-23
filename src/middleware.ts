@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   const isPublic =
     pathname === '/login' ||
     pathname.startsWith('/auth') ||
+    pathname.startsWith('/demo') ||
     pathname === '/favicon.ico';
 
   if (!user && !isPublic) {
@@ -50,5 +51,5 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Run on everything except static assets and the API (API routes do their
   // own auth checks and must not be redirected).
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|demo|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
