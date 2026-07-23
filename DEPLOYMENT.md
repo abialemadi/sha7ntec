@@ -64,10 +64,9 @@ After `0004`, confirm **Storage → Buckets** shows a **private** bucket named
 
 ### Seed the demo data
 
-From your machine (uses the service-role key from `.env.local`):
+From your machine (reads the keys from `.env.local` automatically):
 
 ```bash
-set -a && source .env.local && set +a
 npm run seed
 ```
 
