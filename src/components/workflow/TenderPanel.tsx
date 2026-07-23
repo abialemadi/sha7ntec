@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Badge, Money, AnomalyBadge, Panel, Field, Select, SimulatedTag } from '@/components/ui';
 import { recommendAward, type AwardCandidate } from '@/lib/anomaly';
+import { WhatsAppMock } from '@/components/workflow/WhatsAppMock';
 import { formatDateTime } from '@/lib/format';
 import type { Bid, Forwarder, FreightMode, Award, Tender, MarketSnapshotJson } from '@/lib/types';
 
@@ -16,6 +17,20 @@ interface Props {
   award: Award | null;
   forwarderNames: Record<string, string>;
 }
+
+const MODE_META: { key: FreightMode; label: string; icon: string; desc: string; transit: string }[] = [
+  { key: 'sea', label: 'Sea Freight', icon: '🚢', desc: 'Ocean FCL/LCL — high-volume, non-urgent.', transit: '3–7 days' },
+  { key: 'air', label: 'Air Freight', icon: '✈️', desc: 'Air cargo — urgent, high-value.', transit: '1–3 days' },
+  { key: 'both', label: 'Both Modes', icon: '🚢✈️', desc: 'Invite sea + air to compete.', transit: '1–7 days' },
+];
+
+// Supplementary lane benchmarks shown alongside the live BDI at close. These
+// are estimates (not a live feed) and are labelled as such in the UI.
+const LANE_BENCHMARKS = [
+  { name: 'Gulf–UAE Lane (FEU)', value: '41,200', unit: 'USD/FEU' },
+  { name: 'Bunker Fuel VLSFO', value: '498', unit: 'USD/MT' },
+  { name: 'Jebel Ali Congestion', value: '1.2', unit: 'days delay' },
+];
 
 export function TenderPanel(props: Props) {
   const { tender } = props;
@@ -63,15 +78,34 @@ function OpenTenderForm({ poId, forwarders }: { poId: string; forwarders: Forwar
 
   return (
     <div className="space-y-4">
-      <Field label="Freight mode">
-        <Select value={mode} onChange={(e) => setMode(e.target.value as FreightMode)}>
-          <option value="sea">Sea</option>
-          <option value="air">Air</option>
-          <option value="both">Both</option>
-        </Select>
-      </Field>
       <div>
-        <div className="mb-2 text-xs font-medium text-dim">
+        <div className="mb-2 text-xs font-semibold text-dim">Select freight mode</div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {MODE_META.map((m) => {
+            const active = mode === m.key;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => setMode(m.key)}
+                className={
+                  'rounded-lg border p-3 text-left transition-colors ' +
+                  (active ? 'border-blue bg-blue/10' : 'border-border bg-panelAlt hover:bg-border/30')
+                }
+              >
+                <div className="text-xl">{m.icon}</div>
+                <div className={'mt-1 text-sm font-bold ' + (active ? 'text-blue' : 'text-navy')}>
+                  {m.label}
+                </div>
+                <div className="mt-0.5 text-xs text-dim">{m.desc}</div>
+                <div className="mt-1 text-[11px] font-medium text-faint">⏱ {m.transit}</div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <div className="mb-2 text-xs font-semibold text-dim">
           Invite forwarders ({selected.length} selected)
         </div>
         <div className="space-y-1.5">
@@ -198,12 +232,33 @@ function ClosedTenderState({
   return (
     <div className="space-y-4">
       {snapshot && (
-        <div className="flex items-center justify-between rounded-md border border-border bg-panelAlt px-3 py-2 text-sm">
-          <span className="text-dim">
-            Baltic Dry Index at close: <span className="mono font-medium text-ink">{snapshot.value}</span>{' '}
-            {snapshot.unit}
-          </span>
-          {snapshot.stale && <Badge tone="amber">stale</Badge>}
+        <div>
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-dim">
+            📈 Freight market index intelligence
+            {snapshot.stale ? <Badge tone="amber">stale cache</Badge> : <Badge tone="green">live</Badge>}
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-lg border border-green/25 bg-green/5 p-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-faint">
+                Baltic Dry Index
+              </div>
+              <div className="mono mt-1 text-xl font-bold text-navy">
+                {Number(snapshot.value).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-faint">{snapshot.unit ?? 'pts'} · Baltic Exchange</div>
+            </div>
+            {LANE_BENCHMARKS.map((b) => (
+              <div key={b.name} className="rounded-lg border border-border bg-panelAlt p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-faint">
+                  {b.name}
+                </div>
+                <div className="mono mt-1 text-lg font-bold text-navy">{b.value}</div>
+                <div className="flex items-center gap-1 text-[11px] text-faint">
+                  {b.unit} <SimulatedTag>estimate</SimulatedTag>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -267,15 +322,25 @@ function ClosedTenderState({
       )}
 
       {award ? (
-        <div className="rounded-md border border-green/30 bg-green/10 p-3 text-sm text-green">
-          Awarded to <strong>{forwarderNames[award.forwarder_id]}</strong> ·{' '}
-          <Money amount={Number(award.awarded_amount)} /> · saved{' '}
-          <Money amount={Number(award.savings_vs_highest ?? 0)} /> vs the highest bid.
-          {award.connection_sent_at && (
-            <span className="ml-2 inline-flex items-center gap-1">
-              Connection sent <SimulatedTag>simulated email</SimulatedTag>
-            </span>
-          )}
+        <div className="space-y-4">
+          <div className="rounded-md border border-green/30 bg-green/10 p-3 text-sm text-green">
+            Awarded to <strong>{forwarderNames[award.forwarder_id]}</strong> ·{' '}
+            <Money amount={Number(award.awarded_amount)} /> · saved{' '}
+            <Money amount={Number(award.savings_vs_highest ?? 0)} /> vs the highest bid.
+            {award.connection_sent_at && (
+              <span className="ml-2 inline-flex items-center gap-1">
+                Connection sent <SimulatedTag>simulated email</SimulatedTag>
+              </span>
+            )}
+          </div>
+          <WhatsAppMock
+            title={`📦 PO awarded — ${forwarderNames[award.forwarder_id]}`}
+            lines={[
+              `Won the tender at USD ${Number(award.awarded_amount).toLocaleString()}.`,
+              'Coordinate pickup directly. Tracking is now live.',
+            ]}
+            time="14:32"
+          />
         </div>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
