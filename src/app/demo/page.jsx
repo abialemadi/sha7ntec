@@ -223,7 +223,7 @@ function useCountUp(target, duration = 900) {
     };
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
-  }, [target]);
+  }, [target, duration]);
   return val;
 }
 
@@ -503,7 +503,7 @@ function VendorUploadStage() {
 
         {!uploaded ? (
           <div style={{ marginTop: 14, padding: "14px 16px", border: `1.5px dashed ${C.borderStrong}`, borderRadius: 8, textAlign: "center", color: C.textFaint, fontSize: 12, fontFamily: sans }}>
-            Drag files here, or click "Upload Documents" to simulate the vendor submitting their files through the web portal.
+            Drag files here, or click {'"Upload Documents"'} to simulate the vendor submitting their files through the web portal.
           </div>
         ) : (
           <div className="fadein" style={{ marginTop: 14, padding: "12px 16px", background: C.greenDim, borderRadius: 6, border: `1px solid ${C.green}33`, fontSize: 12, color: C.text, fontFamily: sans, display: "flex", alignItems: "center", gap: 10 }}>
@@ -1327,17 +1327,17 @@ function FinancePaymentStage() {
 
           {/* ERP payload preview */}
           <div style={{ padding: "14px 16px", background: C.navy, borderRadius: 8, fontFamily: mono, fontSize: 11.5, color: "#AFC3D6", lineHeight: 2 }}>
-            <div style={{ color: "#5BB8F5", marginBottom: 4, fontSize: 11, letterSpacing: 0.5 }}>// SAP API — Payment Instruction Payload</div>
+            <div style={{ color: "#5BB8F5", marginBottom: 4, fontSize: 11, letterSpacing: 0.5 }}>{"// SAP API — Payment Instruction Payload"}</div>
             <div><span style={{ color: "#7ECFAA" }}>POST</span> /sap/opu/odata/sap/FSCM_BAPI_PAYMENT_SRV</div>
             <div style={{ marginTop: 6 }}>
               <span style={{ color: C.amber }}>{"{"}</span><br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"PO_NUMBER"</span>: <span style={{ color: "#F0C070" }}>"{POOL_PO.id}"</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"VENDOR_ID"</span>: <span style={{ color: "#F0C070" }}>"{winner.real}"</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"AMOUNT"</span>: <span style={{ color: "#F0C070" }}>{winner.rate}</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"CURRENCY"</span>: <span style={{ color: "#F0C070" }}>"USD"</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"PAYMENT_METHOD"</span>: <span style={{ color: "#F0C070" }}>"T"</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"REFERENCE"</span>: <span style={{ color: "#F0C070" }}>"SHA7NTEC-{POOL_PO.id}"</span>,<br />
-              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>"STATUS"</span>: <span style={{ color: "#F0C070" }}>{posted ? '"APPROVED"' : '"PENDING"'}</span><br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"PO_NUMBER"'}</span>: <span style={{ color: "#F0C070" }}>{`"${POOL_PO.id}"`}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"VENDOR_ID"'}</span>: <span style={{ color: "#F0C070" }}>{`"${winner.real}"`}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"AMOUNT"'}</span>: <span style={{ color: "#F0C070" }}>{winner.rate}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"CURRENCY"'}</span>: <span style={{ color: "#F0C070" }}>{'"USD"'}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"PAYMENT_METHOD"'}</span>: <span style={{ color: "#F0C070" }}>{'"T"'}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"REFERENCE"'}</span>: <span style={{ color: "#F0C070" }}>{`"SHA7NTEC-${POOL_PO.id}"`}</span>,<br />
+              &nbsp;&nbsp;<span style={{ color: "#7ECFAA" }}>{'"STATUS"'}</span>: <span style={{ color: "#F0C070" }}>{posted ? '"APPROVED"' : '"PENDING"'}</span><br />
               <span style={{ color: C.amber }}>{"}"}</span>
             </div>
           </div>
@@ -1695,7 +1695,7 @@ function InsightsBrowser() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.navy, fontFamily: sans }}>Insights &amp; Intelligence</div>
-          <div style={{ fontSize: 12.5, color: C.textDim, fontFamily: sans, marginTop: 3 }}>Advanced analytics built from your shipment history — the data moat competitors can't replicate.</div>
+          <div style={{ fontSize: 12.5, color: C.textDim, fontFamily: sans, marginTop: 3 }}>Advanced analytics built from your shipment history — the data moat competitors can&apos;t replicate.</div>
         </div>
         <ExportButtons rows={BEST_CARRIER_12MO.map(c => ({ Carrier: c.name, Shipments: c.shipments, OnTime: c.onTime + "%", Spend: c.spend, Score: c.score }))} filename="sha7ntec-insights" />
       </div>
