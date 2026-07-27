@@ -91,7 +91,7 @@ export function PaymentPanel({ poId, payment }: { poId: string; payment: Payment
               {payment.erp_payload && (
                 <details className="overflow-hidden rounded-lg border border-navy/40 bg-navy" open>
                   <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-[#5BB8F5]">
-                    // SAP S/4HANA — Supplier Invoice payload
+                    {'// SAP S/4HANA — Supplier Invoice payload'}
                   </summary>
                   <pre className="overflow-x-auto px-4 pb-4 font-mono text-xs leading-relaxed text-[#AFC3D6]">
                     {JSON.stringify(payment.erp_payload, null, 2)}

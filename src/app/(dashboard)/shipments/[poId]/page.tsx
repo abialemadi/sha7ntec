@@ -275,7 +275,7 @@ export default async function ShipmentDetailPage({
           {deliveryRow?.delivered_at ? (
             <div className="text-sm text-green">Delivery confirmed on {formatDate(deliveryRow.delivered_at)}.</div>
           ) : (
-            <div className="text-sm text-dim">Awaiting the forwarder's delivery confirmation.</div>
+            <div className="text-sm text-dim">Awaiting the forwarder&apos;s delivery confirmation.</div>
           )}
         </Panel>
       )}

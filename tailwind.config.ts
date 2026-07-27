@@ -27,8 +27,8 @@ const config: Config = {
         red: '#E0604A',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', '"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
       boxShadow: {
         card: '0 1px 3px rgba(20,60,90,0.05)',
