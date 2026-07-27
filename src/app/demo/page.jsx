@@ -659,53 +659,56 @@ function TenderStage() {
     }
   };
 
+  const buildMarketAnalysis = (bdiValue, isLive) => {
+    const avg = Math.round(sorted.reduce((s, b) => s + b.rate, 0) / sorted.length);
+    const spread = sorted[sorted.length - 1].rate - sorted[0].rate;
+    const spreadPct = avg > 0 ? Math.round((spread / avg) * 100) : 0;
+    const flagged = analyzed.filter((b) => b.level === "flagged").length;
+    const saving = sorted[sorted.length - 1].rate - winner.rate;
+    const bdiTone = bdiValue >= 2800 ? "elevated" : bdiValue <= 2000 ? "soft" : "moderate";
+    const timing =
+      bdiValue >= 2800
+        ? "rates are running hot, so locking in the awarded rate now is prudent"
+        : bdiValue <= 2000
+        ? "the market is soft and favourable — a good window to commit"
+        : "conditions are stable, with no urgency premium expected near term";
+    const modeNote =
+      freightMode === "both"
+        ? " Across modes, the air options trade a higher rate for materially shorter transit — justify the premium only where the cargo is time-critical."
+        : freightMode === "air"
+        ? " Air capacity on this lane is holding, so transit reliability should track the quoted figures."
+        : "";
+    const src = isLive ? "live from the Baltic Exchange" : "a simulated benchmark";
+    return `With the Baltic Dry Index at ${bdiValue.toLocaleString()} pts (${src}), dry-freight conditions read as ${bdiTone}. The ${sorted.length} sealed bids span a ${spreadPct}% spread; awarding ${winner.masked} at ${fmt(winner.rate)} captures ${fmt(saving)} versus the highest quote${flagged ? `, after screening out ${flagged} bid(s) flagged for anomalies` : ""}.${modeNote} On timing, ${timing}.`;
+  };
+
   const handleReveal = async () => {
     setRevealed(true);
-    // Try live BDI if key provided, otherwise use demo value
+    // Determine the BDI value: live from oilpriceapi.com when a key is
+    // supplied, otherwise a realistic demo value. Either path renders the panel.
     let bdiValue = 2671; // demo fallback (last known BDI)
+    let isLive = false;
     if (bdiApiKey.trim()) {
       const live = await fetchLiveBDI(bdiApiKey.trim());
-      if (live) bdiValue = live;
+      if (live) {
+        bdiValue = live;
+        isLive = true;
+      } else {
+        // Live fetch failed — fall back to demo so the panel still renders.
+        setLiveBDI({ value: bdiValue, ts: "demo", source: "Live fetch failed — showing simulated BDI" });
+      }
     } else {
       setBdiStatus("demo");
       setLiveBDI({ value: bdiValue, ts: "demo", source: "Simulated — add API key for live data" });
     }
-    // Build indices using real BDI + simulated lane rates
-    const liveIndices = selectedMode.indices;
-    if (liveIndices.BDI) liveIndices.BDI.value = bdiValue; // inject real BDI
-    if (liveIndices.BCI) liveIndices.BCI.value = Math.round(bdiValue * 1.47); // Capesize typically ~1.47x BDI
-    // Call Claude for AI market intelligence
+    // Generate market intelligence locally — deterministic, always available,
+    // and honest for a self-contained demo (no external LLM call).
     setAnalysisLoading(true);
-    try {
-      const modeCtx = freightMode === "both" ? "Dual-mode tender comparing sea and air."
-        : freightMode === "air" ? "Air freight tender — bids per kg/consignment."
-        : "Ocean freight tender — bids per FEU container.";
-      const prompt = `You are Sha7ntec's freight market intelligence engine. Analyze these freight bids against current market data.
-
-Freight mode: ${selectedMode.label}. ${modeCtx}
-Shipment: ${POOL_PO.cargo}, ${POOL_PO.origin} → ${POOL_PO.destination}, PO value: ${fmt(POOL_PO.value)}
-
-Submitted bids:
-${sorted.map(b => `- ${b.masked}: ${fmt(b.rate)} (${b.transit}d transit, ${b.reliability}% reliability)`).join('\n')}
-
-Live market data:
-- Baltic Dry Index (BDI): ${bdiValue} pts${bdiStatus === "live" ? " [LIVE from Baltic Exchange via oilpriceapi.com]" : " [demo value]"}
-${Object.values(selectedMode.indices).filter(i => i.name !== "Baltic Dry Index").map(i => `- ${i.name}: ${i.value} ${i.unit} (${i.change > 0 ? '+' : ''}${i.change}% simulated)`).join('\n')}
-- Data source: Freightos Baltic Index (FBX) · Baltic Exchange
-
-Write 2-3 sentences of market intelligence for the procurement officer: reference the actual BDI value, assess whether the bids look fair vs current market conditions${freightMode === "both" ? ", compare sea vs air cost/speed trade-offs" : ""}, and advise on timing. Be specific, professional, no headers.`;
-
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1000, messages: [{ role: "user", content: prompt }] }),
-      });
-      const data = await res.json();
-      setMarketAnalysis(data.content?.find(c => c.type === "text")?.text || "");
-    } catch {
-      setMarketAnalysis(`With the BDI at ${bdiValue.toLocaleString()} points, current dry-bulk rates are moderate — bids appear within an acceptable range for this lane. Market analysis unavailable but bid anomaly detection has been applied.`);
-    }
-    setAnalysisLoading(false);
+    const analysis = buildMarketAnalysis(bdiValue, isLive);
+    setTimeout(() => {
+      setMarketAnalysis(analysis);
+      setAnalysisLoading(false);
+    }, 600);
   };
 
   const LEVEL = {
@@ -920,7 +923,7 @@ Write 2-3 sentences of market intelligence for the procurement officer: referenc
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, fontFamily: sans }}>🤖 AI Market Intelligence</div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 9.5, color: C.violet, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3 }}>POWERED BY CLAUDE</span>
+                <span style={{ fontSize: 9.5, color: C.violet, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3 }}>AUTO-GENERATED</span>
                 <a href="https://app.terminal.freightos.com/fbx" target="_blank" rel="noopener noreferrer"
                   style={{ fontSize: 9.5, color: C.blue, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3, textDecoration: "none" }}>
                   FBX on Freightos ↗
@@ -1035,7 +1038,7 @@ function DeliveryStage() {
 
   return (
     <div className="fadein">
-      <Header eyebrow="Stage 06" role="Freight Forwarder" title="Delivery Confirmation" sub="After delivering the material, the freight forwarder uploads the Delivery Note and Invoice together, then marks the shipment status as Delivered." />
+      <Header eyebrow="Stage 05" role="Freight Forwarder" title="Delivery Confirmation" sub="After delivering the material, the freight forwarder uploads the Delivery Note and Invoice together, then marks the shipment status as Delivered." />
 
       <Panel title={`Freight Forwarder Portal — ${winner.real}`} right={!delivered ? <ActionBtn onClick={() => setDelivered(true)} label="Upload Documents & Mark Delivered →" color={C.violet} /> : <Badge color={C.green} label="DELIVERED" />}>
         <Grid cols={2}>
@@ -1096,7 +1099,7 @@ function GoodsReceiptStage() {
 
   return (
     <div className="fadein">
-      <Header eyebrow="Stage 05" role="Store / Warehouse" title="Goods Receipt & Service Entry" sub="The store keeper inspects the shipment, records its receiving condition, then Sha7ntec posts the Service Entry Sheet in SAP — flagging any discrepancy for Finance before payment." />
+      <Header eyebrow="Stage 06" role="Store / Warehouse" title="Goods Receipt & Service Entry" sub="The store keeper inspects the shipment, records its receiving condition, then Sha7ntec posts the Service Entry Sheet in SAP — flagging any discrepancy for Finance before payment." />
 
       {/* INSPECTION PANEL */}
       <Panel title={`Goods Receipt — ${POOL_PO.id}`} right={confirmed ? <Badge color={selected.color} label={condition === "good" ? "RECEIVED — GOOD" : "RECEIVED — FLAGGED"} /> : null}>
@@ -1391,8 +1394,8 @@ const SHIPMENT_STATUSES = [
   { key: 0, label: "Shipping PO",         icon: "⏳", color: "#E0A23A", stages: [0, 1] },
   { key: 1, label: "Shipping Tender",     icon: "🔒", color: "#2E8FE0", stages: [2]    },
   { key: 2, label: "Shipping Awarded",    icon: "🏆", color: "#7B6FD0", stages: [3]    },
-  { key: 3, label: "Shipping Receipt",    icon: "📦", color: "#1FAE6E", stages: [4]    },
-  { key: 4, label: "Shipping Delivery",   icon: "🚢", color: "#7B6FD0", stages: [5]    },
+  { key: 3, label: "Shipping Delivery",   icon: "🚢", color: "#7B6FD0", stages: [4]    },
+  { key: 4, label: "Shipping Receipt",    icon: "📦", color: "#1FAE6E", stages: [5]    },
   { key: 5, label: "Shipping Payment",    icon: "💳", color: "#E0604A", stages: [6]    },
 ];
 
@@ -1810,8 +1813,8 @@ export default function Sha7ntecMVP() {
     { label: "Shipment Ready Notification", role: "Procurement",     render: () => <ShipmentReadyStage /> },
     { label: "Tender · Blind Bidding",    role: "Procurement",       render: () => <TenderStage /> },
     { label: "Award & Connect",           role: "Procurement",       render: () => <AwardConnectStage /> },
-    { label: "Goods Receipt & SAP Entry", role: "Store / Warehouse", render: () => <GoodsReceiptStage /> },
     { label: "Delivery Confirmation",     role: "Freight Forwarder", render: () => <DeliveryStage /> },
+    { label: "Goods Receipt & SAP Entry", role: "Store / Warehouse", render: () => <GoodsReceiptStage /> },
     { label: "Finance Payment Notification", role: "Finance",        render: () => <FinancePaymentStage /> },
   ];
 
