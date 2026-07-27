@@ -634,9 +634,6 @@ function TenderStage() {
   const sorted = [...analyzed].sort((a, b) => a.rate - b.rate);
   const cleanBids = sorted.filter(b => b.level !== "flagged");
   const winner = cleanBids[0] || sorted[0];
-  const flaggedCount = analyzed.filter(b => b.level === "flagged").length;
-  const reviewCount = analyzed.filter(b => b.level === "review").length;
-  const avgBid = sorted.reduce((s, b) => s + b.rate, 0) / sorted.length;
 
   // ── Fetch live BDI from oilpriceapi.com ──────────────────────────────────
   const fetchLiveBDI = async (apiKey) => {
@@ -1425,7 +1422,6 @@ function ShipmentStatusBar({ stage, setStage }) {
         {SHIPMENT_STATUSES.map((s, i) => {
           const isPast = i < activeStatus || isComplete;
           const isActive = i === activeStatus && !isComplete;
-          const isFuture = i > activeStatus && !isComplete;
           return (
             <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
               {/* Connector line */}
@@ -1481,7 +1477,7 @@ function ShipmentStatusBar({ stage, setStage }) {
 // ============================================================
 // EXPORT BUTTONS (PDF via print, Excel via CSV download)
 // ============================================================
-function ExportButtons({ rows, filename, label }) {
+function ExportButtons({ rows, filename }) {
   const exportCSV = () => {
     if (!rows || rows.length === 0) return;
     const headers = Object.keys(rows[0]);
@@ -1556,7 +1552,6 @@ function AnalyticsDashboard() {
   const totalSavings = PIPELINE.reduce((s, p) => s + p.savings, 0);
   const totalValue = PIPELINE.reduce((s, p) => s + p.value, 0);
   const totalFreight = PIPELINE.reduce((s, p) => s + p.freight, 0);
-  const activeShipments = PIPELINE.filter(p => !["Paid"].includes(p.status)).length;
   const avgSavingPct = totalFreight > 0 ? ((totalSavings / (totalFreight + totalSavings)) * 100) : 0;
 
   const kpis = [
@@ -1689,7 +1684,6 @@ function ShipmentPipeline({ onOpenActive }) {
 function InsightsBrowser() {
   const totalSavings = SAVINGS_TREND.reduce((s, m) => s + m.value, 0);
   const maxSaving = Math.max(...SAVINGS_TREND.map(m => m.value));
-  const bestCarrier = BEST_CARRIER_12MO[0];
   const maxCost = Math.max(...AVG_COST_BY_COUNTRY.map(c => c.avgCost));
   const currentOnTime = ON_TIME_TREND[ON_TIME_TREND.length - 1].pct;
 
