@@ -568,10 +568,8 @@ function TenderStage() {
   const [freightMode, setFreightMode] = useState(null);
   const [modeConfirmed, setModeConfirmed] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [bdiApiKey, setBdiApiKey] = useState("");
-  const [showApiInput, setShowApiInput] = useState(false);
   const [liveBDI, setLiveBDI] = useState(null);
-  const [bdiStatus, setBdiStatus] = useState("idle"); // idle | loading | live | error | demo
+  const bdiStatus = "demo"; // offline demo — the BDI is always a simulated benchmark
   const [marketAnalysis, setMarketAnalysis] = useState("");
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
@@ -638,27 +636,6 @@ function TenderStage() {
   const cleanBids = sorted.filter(b => b.level !== "flagged");
   const winner = cleanBids[0] || sorted[0];
 
-  // ── Fetch live BDI from oilpriceapi.com ──────────────────────────────────
-  const fetchLiveBDI = async (apiKey) => {
-    setBdiStatus("loading");
-    try {
-      const res = await fetch(
-        "https://api.oilpriceapi.com/v1/prices/latest?by_code=BALTIC_DRY_INDEX",
-        { headers: { "Authorization": `Token ${apiKey}`, "Content-Type": "application/json" } }
-      );
-      if (!res.ok) throw new Error("API error " + res.status);
-      const json = await res.json();
-      const value = json?.data?.price ?? json?.price ?? null;
-      if (!value) throw new Error("No value in response");
-      setLiveBDI({ value: Math.round(value), ts: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), source: "oilpriceapi.com · Baltic Exchange" });
-      setBdiStatus("live");
-      return Math.round(value);
-    } catch (e) {
-      setBdiStatus("error");
-      return null;
-    }
-  };
-
   const buildMarketAnalysis = (bdiValue, isLive) => {
     const avg = Math.round(sorted.reduce((s, b) => s + b.rate, 0) / sorted.length);
     const spread = sorted[sorted.length - 1].rate - sorted[0].rate;
@@ -682,29 +659,14 @@ function TenderStage() {
     return `With the Baltic Dry Index at ${bdiValue.toLocaleString()} pts (${src}), dry-freight conditions read as ${bdiTone}. The ${sorted.length} sealed bids span a ${spreadPct}% spread; awarding ${winner.masked} at ${fmt(winner.rate)} captures ${fmt(saving)} versus the highest quote${flagged ? `, after screening out ${flagged} bid(s) flagged for anomalies` : ""}.${modeNote} On timing, ${timing}.`;
   };
 
-  const handleReveal = async () => {
+  const handleReveal = () => {
     setRevealed(true);
-    // Determine the BDI value: live from oilpriceapi.com when a key is
-    // supplied, otherwise a realistic demo value. Either path renders the panel.
-    let bdiValue = 2671; // demo fallback (last known BDI)
-    let isLive = false;
-    if (bdiApiKey.trim()) {
-      const live = await fetchLiveBDI(bdiApiKey.trim());
-      if (live) {
-        bdiValue = live;
-        isLive = true;
-      } else {
-        // Live fetch failed — fall back to demo so the panel still renders.
-        setLiveBDI({ value: bdiValue, ts: "demo", source: "Live fetch failed — showing simulated BDI" });
-      }
-    } else {
-      setBdiStatus("demo");
-      setLiveBDI({ value: bdiValue, ts: "demo", source: "Simulated — add API key for live data" });
-    }
-    // Generate market intelligence locally — deterministic, always available,
-    // and honest for a self-contained demo (no external LLM call).
+    // Offline demo: use a representative Baltic Dry Index — no network call.
+    const bdiValue = 2671;
+    setLiveBDI({ value: bdiValue, source: "Simulated — representative Baltic Dry Index" });
+    // Generate market intelligence locally — deterministic and self-contained.
     setAnalysisLoading(true);
-    const analysis = buildMarketAnalysis(bdiValue, isLive);
+    const analysis = buildMarketAnalysis(bdiValue, false);
     setTimeout(() => {
       setMarketAnalysis(analysis);
       setAnalysisLoading(false);
@@ -774,51 +736,6 @@ function TenderStage() {
         )}
       </Panel>
 
-      {/* ── BDI API KEY CONFIG (optional, before floating) ── */}
-      {modeConfirmed && !revealed && (
-        <div style={{ marginBottom: 14, padding: "12px 16px", background: C.panelAlt, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: C.navy, fontFamily: sans }}>
-                📡 Live Baltic Dry Index — oilpriceapi.com
-              </div>
-              <div style={{ fontSize: 11, color: C.textDim, fontFamily: sans, marginTop: 2 }}>
-                Add a free API key to pull the live BDI from the Baltic Exchange into the AI analysis.{" "}
-                <a href="https://www.oilpriceapi.com/auth/signup" target="_blank" rel="noopener noreferrer"
-                  style={{ color: C.blue, fontWeight: 600 }}>Get free key →</a>
-                {" · "}
-                <a href="https://app.terminal.freightos.com/fbx" target="_blank" rel="noopener noreferrer"
-                  style={{ color: C.blue, fontWeight: 600 }}>View FBX on Freightos →</a>
-              </div>
-            </div>
-            <button onClick={() => setShowApiInput(s => !s)} style={{
-              background: C.blueDim, border: `1px solid ${C.blue}44`, borderRadius: 6,
-              padding: "6px 12px", fontSize: 11.5, fontWeight: 700, color: C.blue,
-              fontFamily: sans, cursor: "pointer", whiteSpace: "nowrap", marginLeft: 14,
-            }}>{showApiInput ? "Hide" : "Add API Key"}</button>
-          </div>
-          {showApiInput && (
-            <div className="fadein" style={{ marginTop: 12, display: "flex", gap: 10, alignItems: "center" }}>
-              <input
-                type="password"
-                value={bdiApiKey}
-                onChange={e => setBdiApiKey(e.target.value)}
-                placeholder="Paste your oilpriceapi.com API key here…"
-                style={{ flex: 1, padding: "9px 12px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.panel, fontSize: 12.5, fontFamily: sans, color: C.text, outline: "none" }}
-              />
-              {bdiApiKey && (
-                <div style={{ fontSize: 11, color: C.green, fontFamily: sans, fontWeight: 700, whiteSpace: "nowrap" }}>✓ Key ready</div>
-              )}
-            </div>
-          )}
-          {!bdiApiKey && !showApiInput && (
-            <div style={{ fontSize: 10.5, color: C.textFaint, fontFamily: sans, marginTop: 6 }}>
-              Without a key, a realistic demo BDI value is used. The AI analysis still runs either way.
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── STEP 2: TENDER (only after mode confirmed) ── */}
       {modeConfirmed && (
         <Panel title={`Step 2 — Tender for ${POOL_PO.id} · ${selectedMode.icon} ${selectedMode.label}`}
@@ -864,7 +781,7 @@ function TenderStage() {
       {revealed && liveBDI && (
         <Panel
           title="📈 Freight Market Index Intelligence"
-          sub="Bids cross-checked against live freight indices — Baltic Dry Index (BDI) from oilpriceapi.com · Baltic Exchange, plus simulated GCC lane rates."
+          sub="Bids cross-checked against freight market benchmarks — a representative Baltic Dry Index plus simulated GCC lane rates."
           right={
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: bdiStatus === "live" ? C.green : C.amber, animation: bdiStatus === "live" ? "pulse 2s infinite" : "none" }} />
@@ -922,13 +839,7 @@ function TenderStage() {
           <div style={{ padding: "13px 16px", background: C.violetDim, border: `1px solid ${C.violet}33`, borderRadius: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, fontFamily: sans }}>🤖 AI Market Intelligence</div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <span style={{ fontSize: 9.5, color: C.violet, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3 }}>AUTO-GENERATED</span>
-                <a href="https://app.terminal.freightos.com/fbx" target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: 9.5, color: C.blue, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3, textDecoration: "none" }}>
-                  FBX on Freightos ↗
-                </a>
-              </div>
+              <span style={{ fontSize: 9.5, color: C.violet, fontWeight: 700, fontFamily: sans, letterSpacing: 0.3 }}>AUTO-GENERATED</span>
             </div>
             {analysisLoading ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.textDim, fontFamily: sans }}>
@@ -940,13 +851,6 @@ function TenderStage() {
             )}
           </div>
 
-          {bdiStatus !== "live" && (
-            <div style={{ marginTop: 12, fontSize: 11, color: C.textFaint, fontFamily: sans, padding: "8px 12px", background: C.panelAlt, borderRadius: 6, border: `1px solid ${C.border}` }}>
-              💡 <strong>To activate live BDI data:</strong> add your free API key from{" "}
-              <a href="https://www.oilpriceapi.com/auth/signup" target="_blank" rel="noopener noreferrer" style={{ color: C.blue }}>oilpriceapi.com</a>
-              {" "}before floating the next tender. The key is saved per session only and never stored.
-            </div>
-          )}
         </Panel>
       )}
     </div>
