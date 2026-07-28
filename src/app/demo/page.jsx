@@ -32,8 +32,11 @@ const C = {
   white: "#FFFFFF",
 };
 
-const mono = "'IBM Plex Mono', monospace";
-const sans = "'Inter', sans-serif";
+// Use the self-hosted fonts the root layout loads via next/font (exposed as
+// --font-sans / --font-mono). No CDN request, so the demo runs fully offline;
+// falls back to the named family, then the generic, if a variable is absent.
+const mono = "var(--font-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-sans), 'Inter', sans-serif";
 
 // ============================================================
 // SAMPLE DATA
@@ -1817,7 +1820,6 @@ export default function Sha7ntecMVP() {
   return (
     <div style={{ display: "flex", height: "100vh", background: C.bg, fontFamily: sans }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; }
         ::-webkit-scrollbar { width: 8px; }
